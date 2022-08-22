@@ -2,6 +2,7 @@ import React from 'react';
 import {Canvas,useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 //import {OrbitControls} from '@react-three/drei';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { widthState,refState } from '../atom/atom';
 import { useSetRecoilState, useRecoilState } from 'recoil';
 import { useRef } from 'react';
@@ -10,85 +11,89 @@ function Dolphin(){
     const [widthAtom,setWidthAtom]=useRecoilState<any>(widthState)
     const [refAtom,setRefAtom]=useRecoilState<any>(refState)
     const [renderer, setRenderer] = React.useState<any>()
+    const refContainer = useRef(null)
+    const refRenderer = useRef<any|null>(null)
 
-    
     React.useEffect(()=>{
         console.log(widthAtom);
     },[widthAtom])
 
-    const handleWindowResize = React.useCallback(() => {
-        
-        console.log(renderer)
-        if (renderer) {
-            console.log('111')
-          const scW = widthAtom
-          const scH = widthAtom
-          //rendererInit.setSize(scW, scH)
-        }
-    
-      }, [renderer])
+  const handleWindowResize = React.useCallback(() => {
+    const { current: renderer } :any = refRenderer
+    const { current: container } :any = refContainer
+    if (container && renderer) {
+      
+      const scW = container.clientWidth
+      console.log(scW)
+      const scH = container.clientHeight
 
-    const rendererInit = new THREE.WebGLRenderer();
+      renderer.setSize(scW, scH)
+    }
+    console.log('set')
+  }, [])
+
 
     React.useEffect(()=>{
         const scene = new THREE.Scene();
+
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-            let frameId: any
-            const handleResize = () => {
-                        console.log('resize')
-                            let width = widthAtom
-                            let height = widthAtom
-                            renderer.setSize(width, height)
-                            camera.aspect = width / height
-                            camera.updateProjectionMatrix()
-                            rendererInit.render( scene, camera );
-                        }
+            const { current: container }:any = refContainer
+            
+            
+              console.log(container)
+              const scW = container.clientWidth*3
+              const scH = 300
 
-            rendererInit.setSize(  window.innerWidth, window.innerHeight);
-            document.body.appendChild( rendererInit.domElement );
-            setRenderer(rendererInit)  
+              const rendererInit = new THREE.WebGLRenderer()
+              rendererInit.setPixelRatio(window.devicePixelRatio)
+              rendererInit.setSize(scW, scH)
 
-            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-            const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-            const cube = new THREE.Mesh( geometry, material );
-            scene.add( cube );
+              container.appendChild(rendererInit.domElement)
+              refRenderer.current=rendererInit
+              //setRenderer(rendererInit)  
 
-            camera.position.z = 3;
+              const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+              const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+              const cube = new THREE.Mesh( geometry, material );
+              scene.add( cube );
 
-            function animate() {
-                requestAnimationFrame( animate );
+              camera.position.z = 3;
 
-                cube.rotation.x += 0.01;
-                cube.rotation.y += 0.01;
+              let req :any= null   
+              let frame = 0
 
-                rendererInit.render( scene, camera );
-                frameId=window.requestAnimationFrame(animate)
-            };
-            window.addEventListener('resize', handleResize)
-            animate();
-            const stop = () => {
-                cancelAnimationFrame(frameId)
-                frameId = null
-              }
+              // const controls = new OrbitControls(camera, rendererInit.domElement)
+              // controls.autoRotate = true
+
+              const animate=()=> {
+                req = requestAnimationFrame(animate)
+                
+                frame = frame <= 100 ? frame + 1 : frame
+
+                  cube.rotation.x += 0.01;
+                  cube.rotation.y += 0.01;
+                  rendererInit.render( scene, camera );
+
+              };
+              animate();
+              console.log('?')
+              return () => {
+                console.log('end')
+                            cancelAnimationFrame(req)
+                            rendererInit.domElement.remove()
+                            rendererInit.dispose()
+              }     
           
-            // return () => {
-            //     stop()
-            //     window.removeEventListener('resize', handleResize)
-            //     //document.body.removeChild(renderer.domElement)
-          
-            //     scene.remove(cube)
-            //     geometry.dispose()
-            //     material.dispose()
-            //   }
     },[])
+
     React.useEffect(() => {
         window.addEventListener('resize', handleWindowResize, false)
         return () => {
           window.removeEventListener('resize', handleWindowResize, false)
         }
-      }, [renderer, handleWindowResize])
+      }, [handleWindowResize])
     return(
-        <div></div>
+        <div ref={refContainer}></div>
         // <div ref={refContainer}></div>
     )
 }
