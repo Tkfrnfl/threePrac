@@ -4,65 +4,92 @@ import * as THREE from 'three';
 //import {OrbitControls} from '@react-three/drei';
 import { widthState,refState } from '../atom/atom';
 import { useSetRecoilState, useRecoilState } from 'recoil';
+import { useRef } from 'react';
 
 function Dolphin(){
     const [widthAtom,setWidthAtom]=useRecoilState<any>(widthState)
     const [refAtom,setRefAtom]=useRecoilState<any>(refState)
     const [renderer, setRenderer] = React.useState<any>()
 
-    const refContainer = refAtom
+    
+    React.useEffect(()=>{
+        console.log(widthAtom);
+    },[widthAtom])
 
     const handleWindowResize = React.useCallback(() => {
-        const { current: container }:any = refContainer
-        if (container && renderer) {
-          const scW = container.clientWidth
-          const scH = container.clientHeight
-    
-          renderer.setSize(scW, scH)
+        
+        console.log(renderer)
+        if (renderer) {
+            console.log('111')
+          const scW = widthAtom
+          const scH = widthAtom
+          //rendererInit.setSize(scW, scH)
         }
+    
       }, [renderer])
-    
-    React.useEffect(() => {
-        window.addEventListener('resize', handleWindowResize, false)
-        console.log(refAtom)
-        return () => {
-          window.removeEventListener('resize', handleWindowResize, false)
-        }
-      }, [renderer, handleWindowResize])  
-
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
     const rendererInit = new THREE.WebGLRenderer();
 
-    const { current: container }:any = refContainer
-    console.log(container)
-    const scW = container.clientWidth
-    const scH = container.clientHeight
-    rendererInit.setSize( scW, scH );
-    document.body.appendChild( rendererInit.domElement );
-    setRenderer(rendererInit)  
+    React.useEffect(()=>{
+        const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            let frameId: any
+            const handleResize = () => {
+                        console.log('resize')
+                            let width = widthAtom
+                            let height = widthAtom
+                            renderer.setSize(width, height)
+                            camera.aspect = width / height
+                            camera.updateProjectionMatrix()
+                            rendererInit.render( scene, camera );
+                        }
 
-    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-    const cube = new THREE.Mesh( geometry, material );
-    scene.add( cube );
+            rendererInit.setSize(  window.innerWidth, window.innerHeight);
+            document.body.appendChild( rendererInit.domElement );
+            setRenderer(rendererInit)  
 
-    camera.position.z = 3;
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+            const cube = new THREE.Mesh( geometry, material );
+            scene.add( cube );
 
-    function animate() {
-        requestAnimationFrame( animate );
+            camera.position.z = 3;
 
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+            function animate() {
+                requestAnimationFrame( animate );
 
-        renderer.render( scene, camera );
-    };
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
 
-    animate();
+                rendererInit.render( scene, camera );
+                frameId=window.requestAnimationFrame(animate)
+            };
+            window.addEventListener('resize', handleResize)
+            animate();
+            const stop = () => {
+                cancelAnimationFrame(frameId)
+                frameId = null
+              }
+          
+            // return () => {
+            //     stop()
+            //     window.removeEventListener('resize', handleResize)
+            //     //document.body.removeChild(renderer.domElement)
+          
+            //     scene.remove(cube)
+            //     geometry.dispose()
+            //     material.dispose()
+            //   }
+    },[])
+    React.useEffect(() => {
+        window.addEventListener('resize', handleWindowResize, false)
+        return () => {
+          window.removeEventListener('resize', handleWindowResize, false)
+        }
+      }, [renderer, handleWindowResize])
     return(
         <div></div>
+        // <div ref={refContainer}></div>
     )
 }
 
