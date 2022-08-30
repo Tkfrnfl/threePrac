@@ -3,6 +3,7 @@
 
 import React from "react";
 import Dolphin from './components/dolphin';
+import Vis from './components/test';
 import GridLayout from "react-grid-layout";
 import './css/App.css';
 import { ChakraProvider } from "@chakra-ui/react";
@@ -14,7 +15,8 @@ const App = () => {
   const [refAtom,setRefAtom]=useRecoilState(refState)
   const layout = [
         { i: "a", x: 0, y: 0, w: 2, h: 2, static: true },
-        { i: "b", x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4 },
+        { i: "b", x: 1, y: 0, w: 4, h: 2, static:true },
+        { i: "c", x: 10, y: 0, w: 2, h: 2,static: true }
       ];
 
   React.useEffect(() => {
@@ -28,10 +30,11 @@ const App = () => {
     window.addEventListener("resize", getwidth);
     setWidthAtom(width)
     setRefAtom(ref)
-    console.log(widthState)
+    
     // remove the event listener before the component gets unmounted
     return () => window.removeEventListener("resize", getwidth);
   }, [width]);
+
 
   return (
     <ChakraProvider resetCSS>
@@ -42,7 +45,7 @@ const App = () => {
           layout={layout}
           cols={12}
           rowHeight={30}
-          width={1200}
+          width={width}
         >
           <div
             style={{
@@ -52,7 +55,21 @@ const App = () => {
           >
             Width: {width}
             dd:{widthAtom}
-            <Dolphin></Dolphin>
+            <Dolphin></Dolphin> 
+          </div>
+          {/* <div
+          key="b"
+          >
+          </div> */}
+          <div
+            style={{
+              border: "1px solid red"
+            }}
+            key="c"
+          >
+            Width: {width}
+            dd:{widthAtom}
+            <Dolphin></Dolphin> 
           </div>
         </GridLayout>
       </div>
