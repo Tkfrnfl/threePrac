@@ -8,7 +8,9 @@ import { useSetRecoilState, useRecoilState } from 'recoil';
 import { useRef } from 'react';
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { Object3D } from 'three';
-
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 function Dolphin(){
     const [widthAtom,setWidthAtom]=useRecoilState<any>(widthState)
@@ -42,7 +44,7 @@ function Dolphin(){
         const scene = new THREE.Scene();
 
         var Mesh :Object3D;
-        scene.background = new THREE.Color( 0x00FFFF );
+        scene.background = new THREE.Color( 0x000000 );
         console.log(widthAtom)
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
             const { current: container }:any = refContainer
@@ -59,9 +61,27 @@ function Dolphin(){
               refRenderer.current=rendererInit
               //setRenderer(rendererInit)  
 
+              //setblooming
+              const params = {
+                exposure: 1,
+                bloomStrength: 5,
+                bloomThreshold: 0,
+                bloomRadius: 0,
+                scene: 'Scene with Glow'
+              };
+              const renderScene = new RenderPass( scene, camera );
+              const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+			bloomPass.threshold = params.bloomThreshold;
+			bloomPass.strength = params.bloomStrength;
+			bloomPass.radius = params.bloomRadius;
+      const bloomComposer = new EffectComposer( rendererInit );
+			bloomComposer.renderToScreen = false;
+			bloomComposer.addPass( renderScene);
+			bloomComposer.addPass( bloomPass );
+
               const geometry = new THREE.BoxGeometry( 0.1, 1, 1 );
               const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-              const cube = new THREE.Mesh( geometry, material );
+              const cube = new THREE.Mesh( new THREE.PlaneGeometry( 1, 1 ), );
               scene.add( cube );
               //obj load
               const dolphin = new OBJLoader();
@@ -88,13 +108,17 @@ function Dolphin(){
 
               let req :any= null   
               let frame = 0
+              
+            
+           
 
+              
               // const controls = new OrbitControls(camera, rendererInit.domElement)
               // controls.autoRotate = true
 
               const animate=()=> {
                 req = requestAnimationFrame(animate)
-                
+               
                 frame = frame <= 100 ? frame + 1 : frame
                   scW=container.clientWidth
                   rendererInit.setSize(scW, scH)
@@ -106,6 +130,7 @@ function Dolphin(){
                   rendererInit.render( scene, camera );
 
               };
+              
               animate();
               console.log('?')
               return () => {
