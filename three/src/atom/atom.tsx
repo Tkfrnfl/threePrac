@@ -1,12 +1,12 @@
 import { atom } from 'recoil';
 
 const widthState:any = atom({
-  key:'withState',
-  default:0
-})
+  key: 'withState',
+  default: 0,
+});
 const refState:any = atom({
-  key:'refState',
-  default:null
-})
+  key: 'refState',
+  default: null,
+});
 
-export {widthState,refState};
+export { widthState, refState };

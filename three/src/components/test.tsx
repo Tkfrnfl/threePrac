@@ -5,89 +5,82 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { widthState,refState } from '../atom/atom';
 import { useSetRecoilState, useRecoilState } from 'recoil';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { useRef } from 'react';
+import { render } from '@testing-library/react';
+import {GUI} from "dat.gui";
+
 
 const Vis = () => {
-    const { useRef, useEffect, useState } = React
-    const mount = useRef<any|null>(null)
-    const [isAnimating, setAnimating] = useState(true)
-    const controls = useRef<any|null>(null)
-    
-    useEffect(() => {
-      let width  = mount.current.clientWidth
-      let height = mount.current.clientHeight
-      let frameId:any
-  
-      const scene = new THREE.Scene()
-      const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
-      const renderer = new THREE.WebGLRenderer({ antialias: true })
-      const geometry = new THREE.BoxGeometry(1, 1, 1)
-      const material = new THREE.MeshBasicMaterial({ color: 0xff00ff })
-      const cube = new THREE.Mesh(geometry, material)
-  
-      camera.position.z = 4
-      scene.add(cube)
-      renderer.setClearColor('#000000')
-      renderer.setSize(width, height)
-  
-      const renderScene = () => {
-        renderer.render(scene, camera)
-      }
-  
-      const handleResize = () => {
-        width = mount.current.clientWidth
-        height = mount.current.clientHeight
-        renderer.setSize(width, height)
-        camera.aspect = width / height
-        camera.updateProjectionMatrix()
-        renderScene()
-      }
-      
-      const animate = () => {
-        cube.rotation.x += 0.01
-        cube.rotation.y += 0.01
-  
-        renderScene()
-        frameId = window.requestAnimationFrame(animate)
-      }
-  
-      const start = () => {
-        if (!frameId) {
-          frameId = requestAnimationFrame(animate)
-        }
-      }
-  
-      const stop = () => {
-        cancelAnimationFrame(frameId)
-        frameId = null
-      }
-  
-      mount.current.appendChild(renderer.domElement)
-      window.addEventListener('resize', handleResize)
-      start()
-  
-      controls.current = { start, stop }
-      
-      return () => {
-        stop()
-        window.removeEventListener('resize', handleResize)
-        mount.current.removeChild(renderer.domElement)
-  
-        scene.remove(cube)
-        geometry.dispose()
-        material.dispose()
-      }
-    }, [])
-  
-    useEffect(() => {
-      if (isAnimating) {
-        controls.current.start()
-      } else {
-        controls.current.stop()
-      }
-    }, [isAnimating])
-    
-    return <div className="vis" ref={mount} onClick={() => setAnimating(!isAnimating)} />
+	var scene = new THREE.Scene();
+	var camera = new THREE.PerspectiveCamera(60, window.innerWidth/ window.innerHeight, 1, 10000);
+	camera.position.set(0, 0, 10);
+	//camera.layers.enable(1);
+	var renderer = new THREE.WebGLRenderer({antialias: true});
+	renderer.autoClear = false;
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setClearColor( 0x101000 );
+	document.body.appendChild(renderer.domElement);
+	
+	var controls = new OrbitControls(camera, renderer.domElement);
+	
+	var light = new THREE.DirectionalLight(0xffffff, 0.75);
+	light.position.setScalar(100);
+	scene.add(light);
+	scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+	
+	// var obj = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 4), new THREE.MeshLambertMaterial({color: "red", wireframe: false}));
+	// obj.layers.set(0);
+	// obj.position.z = 0.25;
+	// scene.add(obj);
+	
+	var objBack = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 1), new THREE.MeshBasicMaterial({color: "red", wireframe: false}));
+	objBack.position.z = 0.25;
+	//objBack.layers.set(1);
+	scene.add(objBack);
+	
+	/** COMPOSER */
+	const renderScene = new RenderPass( scene, camera )
+		
+	// effectFXAA = new THREE.ShaderPass( THREE.FXAAShader )
+	// effectFXAA.uniforms.resolution.value.set( 1 / window.innerWidth, 1 / window.innerHeight )
+		
+	const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 )
+	bloomPass.threshold = 0.21
+	bloomPass.strength = 1.2
+	bloomPass.radius = 0.55
+	bloomPass.renderToScreen = true
+		
+	const composer = new EffectComposer( renderer )
+	composer.setSize( window.innerWidth, window.innerHeight )
+		
+	composer.addPass( renderScene )
+	//composer.addPass( effectFXAA )
+	composer.addPass( bloomPass )
+		
+	// renderer.gammaInput = true
+	// renderer.gammaOutput = true
+	renderer.toneMappingExposure = Math.pow( 0.9, 4.0 ) 
+	camera.position.z = 3;
+	render();
+	function render(){
+	  requestAnimationFrame(render);
+	  
+	  renderer.clear();
+	  
+	  //camera.layers.set(1);
+	  composer.render();
+	  
+	  //renderer.clearDepth();
+	  //camera.layers.set(0);
+	  renderer.render(scene, camera);
+	}
+
+  return(
+    <div ></div>
+)
   }
 
   export default Vis
